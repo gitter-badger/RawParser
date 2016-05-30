@@ -1269,6 +1269,10 @@ void CLASS nikon_load_raw()
 			if ((ushort)(hpred[col & 1] + min) >= max) derror();
 			short x = LIM((short)hpred[col & 1], 0, 0x3fff);
 			short xy = curve[x];
+			if(row == 4019)
+			{
+				row = 4019;
+			}
 			RAW(row, col) = xy;
 		}
 	}
