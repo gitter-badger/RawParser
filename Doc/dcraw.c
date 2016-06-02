@@ -668,20 +668,25 @@ ushort * CLASS make_decoder_ref(const uchar **source)
 	ushort *huff;
 
 	count = (*source += 16) - 17;
-
-
-
+	//for (int i = 0; i < 4096; i++, ++*source) printf("%i\n", **source);
 	for (max = 16; max && !count[max]; max--);
 	huff = (ushort *)calloc(1 + (1 << max), sizeof *huff);
 	merror(huff, "make_decoder()");
 	huff[0] = max;
+	int count2[257];
+	for (int uk = 0; uk < 257; uk++)count2[uk] = count[uk];
 	for (h = len = 1; len <= max; len++)
 		for (i = 0; i < count[len]; i++, ++*source)
 			for (j = 0; j < 1 << (max - len); j++)
-				if (h <= 1 << max)
+				if (h <= 1 << max) {
+					if (h == 1023)
+					{
+						int y = 0;
+					}
+					int xy = **source;
+					int tux = len << 8 | **source;
 					huff[h++] = len << 8 | **source;
-	int count2[257];
-	for (int uk = 0; uk < 257; uk++)count2[uk] = huff[uk];
+				}
 	return huff;
 }
 
@@ -1223,7 +1228,6 @@ void CLASS nikon_load_raw()
 		7,6,8,5,9,4,10,3,11,12,2,0,1,13,14 } };
 	ushort *huff, ver0, ver1, vpred[2][2], hpred[2], csize;
 	int i, min, max, step = 0, tree = 0, split = 0, row, col, len, shl, diff;
-
 	fseek(ifp, meta_offset, SEEK_SET);
 	ver0 = fgetc(ifp);
 	ver1 = fgetc(ifp);
@@ -1267,11 +1271,12 @@ void CLASS nikon_load_raw()
 			if (col < 2) hpred[col] = vpred[row & 1][col] += diff;
 			else	   hpred[col & 1] += diff;
 			if ((ushort)(hpred[col & 1] + min) >= max) derror();
-			short x = LIM((short)hpred[col & 1], 0, 0x3fff);
-			short xy = curve[x];
-			if(row == 4019)
+			
+			short xy = curve[LIM((short)hpred[col & 1], 0, 0x3fff)];
+			if (row == 3083 && col == 4670)
 			{
-				row = 4019;
+				int vbr;
+				vbr = 5;
 			}
 			RAW(row, col) = xy;
 		}
