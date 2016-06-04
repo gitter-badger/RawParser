@@ -1265,13 +1265,13 @@ void CLASS nikon_load_raw()
 			len = i & 15;
 			shl = i >> 4;
 			int xtes = getbits(len - shl);
-			diff = (( xtes << 1) + 1) << shl >> 1;
+			diff = ((xtes << 1) + 1) << shl >> 1;
 			if ((diff & (1 << (len - 1))) == 0)
 				diff -= (1 << len) - !shl;
 			if (col < 2) hpred[col] = vpred[row & 1][col] += diff;
 			else	   hpred[col & 1] += diff;
 			if ((ushort)(hpred[col & 1] + min) >= max) derror();
-			
+
 			short xy = curve[LIM((short)hpred[col & 1], 0, 0x3fff)];
 			if (row == 3083 && col == 4670)
 			{
@@ -1280,7 +1280,24 @@ void CLASS nikon_load_raw()
 			}
 			RAW(row, col) = xy;
 		}
+
 	}
+	//create a pgm file
+	FILE *fp;
+
+	fp = fopen("img.pgm", "w+");
+	
+	fprintf(fp, "P2\n%i %i 255 \n",col,row);
+
+	for (int i = 0; i < row; i++) {
+		for (int j = 0; j < col; j++) {
+			unsigned short x = RAW(i, j);
+			x =  x >> 6;
+			fprintf(fp, "%i ", x);
+		}
+		fprintf(fp, "\n");
+	}
+	fclose(fp);
 	free(huff);
 }
 
@@ -7111,10 +7128,10 @@ void CLASS parse_foveon()
 #ifdef LOCALTIME
 			timestamp = mktime(gmtime(&timestamp));
 #endif
-		}
+			}
 		fseek(ifp, save, SEEK_SET);
+		}
 	}
-}
 
 /*
    All matrices are from Adobe DNG Converter unless otherwise noted.
