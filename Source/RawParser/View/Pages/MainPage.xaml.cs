@@ -14,12 +14,12 @@ using Windows.Storage.Provider;
 using Windows.ApplicationModel.Core;
 using Windows.UI.Core;
 using System.Runtime.InteropServices;
-using System.Text;
 using RawParser.View.UIHelper;
 using RawParser.Image;
 using RawParser.Parser;
 using RawParser.Effect;
 using RawParser.Model.Settings;
+using RawParser.Model.Encoder;
 
 namespace RawParser
 {
@@ -41,7 +41,6 @@ namespace RawParser
         public double pageHeight;
         private int currentImageDisplayedHeight;
         private int currentImageDisplayedWidth;
-        private int[] value = new int[256];
 
         bool cameraWB = true;
         private bool ExposuredragStarted;
@@ -50,7 +49,7 @@ namespace RawParser
         public MainPage()
         {
             InitializeComponent();
-            Settings.InitSettings();
+            SettingStorage.init();
             NavigationCacheMode = NavigationCacheMode.Enabled;
             imageSelected = false;
 
@@ -108,6 +107,8 @@ namespace RawParser
                  {
                      colorTempSlider.IsEnabled = v;
                      exposureSlider.IsEnabled = v;
+                     gammaSlider.IsEnabled = v;
+                     //contrastSlider.IsEnabled = v;
                  });
         }
 
@@ -183,7 +184,7 @@ namespace RawParser
                     enableEditingControl(true);
 
                     //create a small image from raw to display
-                    bool autoFactor = Settings.getBoolSetting("autoPreviewFactor");
+                    bool autoFactor = SettingStorage.autoPreviewFactor;
                     int previewFactor = 0;
                     if (autoFactor)
                     {
@@ -193,17 +194,20 @@ namespace RawParser
                         }
                         else
                         {
-                            previewFactor = (int)(raw.width/1080);
+                            previewFactor = (int)(raw.width / 1080);
                         }
+                        int start = 1;
+                        for (; previewFactor > (start << 1); start <<= 1) ;
+                        if ((previewFactor - start) < ((start << 1) - previewFactor)) previewFactor = start;
+                        else previewFactor <<= 1;
                     }
                     else
                     {
-                        previewFactor = Settings.getIntSetting("previewFactor");               
-                    
+                        previewFactor = SettingStorage.previewFactor;
                     }
                     raw.previewHeight = (uint)(raw.height / previewFactor);
                     raw.previewWidth = (uint)(raw.width / previewFactor);
-                    raw.previewData = new uint[raw.previewHeight * raw.previewWidth * 3];
+                    raw.previewData = new ushort[raw.previewHeight * raw.previewWidth * 3];
                     for (int i = 0; i < raw.previewHeight; i++)
                     {
                         for (int j = 0; j < raw.previewWidth; j++)
@@ -214,8 +218,6 @@ namespace RawParser
                         }
                     }
                     updatePreview();
-
-
 
                     //dispose
                     file = null;
@@ -269,35 +271,12 @@ namespace RawParser
             splitView.IsPaneOpen = !splitView.IsPaneOpen;
         }
 
-        public async void displayImage(SoftwareBitmap image)
-        {
-            if (image != null)
-            {
-                using (image)
-                {
-                    await
-                        CoreApplication.MainView.CoreWindow.Dispatcher
-                            .RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                            {
-                                //Do some UI-code that must be run on the UI thread.
-                                //display the image preview
-                                WriteableBitmap bitmap = new WriteableBitmap(image.PixelWidth, image.PixelHeight);
-                                image.CopyToBuffer(bitmap.PixelBuffer);
-                                imageBox.Source = bitmap;
-                                currentImageDisplayedHeight = bitmap.PixelHeight;
-                                currentImageDisplayedWidth = bitmap.PixelWidth;
-                                setScrollProperty();
-                            });
-                }
-            }
-        }
-
         private void setScrollProperty()
         {
             if (currentImageDisplayedWidth > 0 && currentImageDisplayedHeight > 0)
             {
                 float x = 0;
-                double relativeBorder = Settings.geDoubleSetting("imageBoxBorder");
+                double relativeBorder = SettingStorage.imageBoxBorder;
                 if ((currentImageDisplayedWidth / currentImageDisplayedHeight) < (imageDisplayScroll.ActualWidth / imageDisplayScroll.ActualHeight))
                 {
                     x = (float)(imageDisplayScroll.ViewportWidth /
@@ -340,11 +319,9 @@ namespace RawParser
 
         private async void saveButton_Click(object sender, RoutedEventArgs e)
         {
-            string format = Settings.getStringSetting("saveFormat");
-
             //TODO reimplement correclty
             //Just for testing purpose for now
-            if (raw.rawData != null)
+            if (raw?.rawData != null)
             {
                 var savePicker = new FileSavePicker
                 {
@@ -352,70 +329,89 @@ namespace RawParser
                     SuggestedFileName = raw.fileName
                 };
                 // Dropdown of file types the user can save the file as
-                savePicker.FileTypeChoices.Add("Image file", new List<string>() { format });
+                savePicker.FileTypeChoices.Add("Image file", new List<string>() { ".jpg", ".png", ".ppm", ".tiff", ".bmp" });
                 StorageFile file = await savePicker.PickSaveFileAsync();
                 if (file == null) return;
+
 
                 progressDisplay.Visibility = Visibility.Visible;
                 // Prevent updates to the remote version of the file until
                 // we finish making changes and call CompleteUpdatesAsync.
                 CachedFileManager.DeferUpdates(file);
                 var exposure = exposureSlider.Value;
+                int temperature = (int)colorTempSlider.Value;
                 var temp = (int)colorTempSlider.Value;
                 var task = Task.Run(async () =>
                 {
-
-                    //TODO apply to the real image the correction
-                    //apply the exposure
-                    Luminance.Exposure(ref raw.rawData, raw.height, raw.width, exposure);
-                    //apply the temperature (not yet because slider is not set to correct temp)
-                    /*if (colorTempchanged)
-                        Balance.WhiteBalance(ref raw.rawData, raw.colorDepth, raw.height, raw.width, temp);
-                    colorTempchanged = false;*/
-                    //Check if clipping
-                    Luminance.Clip(ref raw.rawData, raw.height, raw.width, (ushort)Math.Pow(2, raw.colorDepth));
+                    ushort[] copyOfimage = new ushort[raw.rawData.Length];
+                    for (int i = 0; i < raw.rawData.Length; i++) copyOfimage[i] = raw.rawData[i];
+                    applyUserModif(ref copyOfimage, raw.height, raw.width, raw.colorDepth);
 
                     // write to file
-                    if (format == ".jpg")
+                    if (file.FileType == ".jpg")
                     {
                         using (var filestream = await file.OpenAsync(FileAccessMode.ReadWrite))
                         {
-                            BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.JpegEncoderId, filestream);
                             int[] t = new int[3];
+                            BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.JpegEncoderId, filestream);
+                            var x = encoder.BitmapProperties;
+                            SoftwareBitmap bitmap = null;
                             //Needs to run in the UI thread because fuck performance
                             await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                             {
                                 //Do some UI-code that must be run on the UI thread.
-                                encoder.SetSoftwareBitmap(raw.getImageRawAs8bitsBitmap(null, ref t));
-
+                                bitmap = RawImage.getImageAs8bitsBitmap(ref copyOfimage, raw.height, raw.width, raw.colorDepth, null, ref t, false, false);
+                                encoder.SetSoftwareBitmap(bitmap);
                             });
                             await encoder.FlushAsync();
+                            encoder = null;
+                            bitmap.Dispose();
                         }
                     }
-                    else if (format == ".ppm")
+                    else if (file.FileType == ".png")
                     {
-                        var str = await file.OpenStreamForWriteAsync();
-                        var stream = new StreamWriter(str, Encoding.ASCII);
-                        stream.Write("P3\r\n" + raw.width + " " + raw.height + " 255 \r\n");
-                        for (int i = 0; i < raw.height; i++)
+                        using (var filestream = await file.OpenAsync(FileAccessMode.ReadWrite))
                         {
-                            for (int j = 0; j < raw.width; j++)
+                            int[] t = new int[3];
+                            BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, filestream);
+                            SoftwareBitmap bitmap = null;
+                            //Needs to run in the UI thread because fuck performance
+                            await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                             {
-                                ushort x = raw.rawData[(int)(((i * raw.width) + j) * 3)];
-                                byte y = (byte)(x >> 6);
-                                stream.Write(y + " ");
-                                x = raw.rawData[(int)(((i * raw.width) + j) * 3) + 1];
-                                y = (byte)(x >> 6);
-                                stream.Write(y + " ");
-                                x = raw.rawData[(int)(((i * raw.width) + j) * 3) + 2];
-                                y = (byte)(x >> 6);
-                                stream.Write(y + " ");
-                            }
-                            stream.Write("\r\n");
+                                //Do some UI-code that must be run on the UI thread.
+                                bitmap = RawImage.getImageAs8bitsBitmap(ref copyOfimage, raw.height, raw.width, raw.colorDepth, null, ref t, false, false);
+                                encoder.SetSoftwareBitmap(bitmap);
+                            });
+                            await encoder.FlushAsync();
+                            encoder = null;
+                            bitmap.Dispose();
                         }
-                        str.Dispose();
                     }
-                    else throw new FormatException("Format not supported: " + format);
+                    else if (file.FileType == ".bmp")
+                    {
+                        using (var filestream = await file.OpenAsync(FileAccessMode.ReadWrite))
+                        {
+                            int[] t = new int[3];
+                            BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.BmpEncoderId, filestream);
+                            SoftwareBitmap bitmap = null;
+                            //Needs to run in the UI thread because fuck performance
+                            await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                            {
+                                //Do some UI-code that must be run on the UI thread.
+                                bitmap = RawImage.getImageAs8bitsBitmap(ref copyOfimage, raw.height, raw.width, raw.colorDepth, null, ref t, false, false);
+                                encoder.SetSoftwareBitmap(bitmap);
+                            });
+                            await encoder.FlushAsync();
+                            encoder = null;
+                            bitmap.Dispose();
+                        }
+                    }
+                    else if (file.FileType == ".ppm")
+                    {
+                        Stream str = await file.OpenStreamForWriteAsync();
+                        PpmEncoder.WriteToFile(str, ref copyOfimage, raw.height, raw.width, raw.colorDepth);
+                    }
+                    else throw new FormatException("Format not supported: " + file.FileType);
                     // Let Windows know that we're finished changing the file so
                     // the other app can update the remote version of the file.
                     // Completing updates may require Windows to ask for user input.
@@ -437,51 +433,88 @@ namespace RawParser
             }
         }
 
-        private void updatePreview()
+        private void displayImage(SoftwareBitmap image)
         {
-            //display the histogram                    
-            Task histoTask = Task.Run(async () =>
+            if (image != null)
             {
-                //get all the value
-                double exposure = 0;
-                double temperature = 0;
+                Task t = Task.Run(async () =>
+                {
+                    using (image)
+                    {
+                        await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                                {
+                                    //Do some UI-code that must be run on the UI thread.
+                                    //display the image preview
+                                    imageBox.Source = null;
+                                    WriteableBitmap bitmap = new WriteableBitmap(image.PixelWidth, image.PixelHeight);
+                                    image.CopyToBuffer(bitmap.PixelBuffer);
+                                    imageBox.Source = bitmap;
+                                    currentImageDisplayedHeight = bitmap.PixelHeight;
+                                    currentImageDisplayedWidth = bitmap.PixelWidth;
+                                    setScrollProperty();
+                                });
+                    }
+                });
+            }
+        }
+        public void applyUserModif(ref ushort[] data, uint height, uint width, int colordepth)
+        {
+            double exposure = 0;
+            double temperature = 0;
+            double gamma = 0;
+            double contrast = 0;
+            Task t = Task.Run(async () =>
+            {
+                //get all the value               
                 await CoreApplication.MainView.CoreWindow.Dispatcher
                 .RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
                     exposure = exposureSlider.Value;
                     temperature = colorTempSlider.Value;
+                    gamma = gammaSlider.Value;
+                    contrast = contrastSlider.Value;
                 });
-                uint[] copyofpreview;
-                //create a copy of the preview
-                lock (raw.previewData)
-                {
-                    copyofpreview = new uint[raw.previewData.Length];
-                    for (int i = 0; i < raw.previewData.Length; i++) copyofpreview[i] = raw.previewData[i];
+            });
+            t.Wait();
 
-                    //aply all thetransformation on it
+            //aply all thetransformation on it
+            if (cameraWB)
+            {
+                Balance.scaleColor(ref data, height, width, raw.dark, raw.saturation, raw.camMul, raw.colorDepth);
+            }
+            else
+            {
+                double[] mul = new double[4];
+                Balance.calculateRGB((int)temperature, out mul[0], out mul[2], out mul[1]);
+                Balance.scaleColor(ref data, height, width, raw.dark, raw.saturation, mul, colordepth);
+            }
+            Balance.scaleGamma(ref data, height, width, colordepth, gamma);
+           // Luminance.Contraste(ref data, height, width, contrast, colordepth);
+            Luminance.Exposure(ref data, height, width, exposure, colordepth);
 
-                    Luminance.Exposure(ref copyofpreview, raw.previewHeight, raw.previewWidth, exposure);
-                    if (cameraWB)
-                    {
-                        Balance.scaleColor(ref copyofpreview, raw.previewHeight, raw.previewWidth, raw.dark, raw.saturation, raw.camMul);
-                    }
-                    else
-                    {
-                        double[] mul = new double[4];
-                        Balance.calculateRGB((int)temperature,out  mul[0],out  mul[2], out mul[1]);
-                        Balance.scaleColor(ref copyofpreview, raw.previewHeight, raw.previewWidth, raw.dark, raw.saturation, mul);
-                    }
-                }
+
+        }
+
+        private void updatePreview()
+        {
+            //display the histogram                    
+            Task histoTask = Task.Run(async () =>
+            {
+                int[] value = new int[256];
+                ushort[] copyofpreview = new ushort[raw.previewData.Length];
+                for (int i = 0; i < copyofpreview.Length; i++) copyofpreview[i] = raw.previewData[i];
+                applyUserModif(ref copyofpreview, raw.previewHeight, raw.previewWidth, raw.colorDepth);
                 SoftwareBitmap bitmap = null;
                 //Needs to run in UI thread because fuck it
                 await CoreApplication.MainView.CoreWindow.Dispatcher
                  .RunAsync(CoreDispatcherPriority.Normal, () =>
                  {
                      histoLoadingBar.Visibility = Visibility.Visible;
-                     bitmap = raw.getImagePreviewAs8bitsBitmapWithCopyOfData(ref copyofpreview, null, ref value);
+                     //Writeablebitmap use BGRA (don't know why )
+                     bitmap = RawImage.getImageAs8bitsBitmap(ref copyofpreview, raw.previewHeight, raw.previewWidth, raw.colorDepth, null, ref value, true, true);
                  });
                 displayImage(bitmap);
-                Histogram.Create(value, raw.colorDepth, histogramCanvas);
+                Histogram.Create(value, raw.colorDepth,raw.previewHeight, raw.previewWidth, histogramCanvas);
                 await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
                     histoLoadingBar.Visibility = Visibility.Collapsed;
@@ -526,7 +559,7 @@ namespace RawParser
                 WBdragStarted = false;
                 cameraWB = false;
                 cameraWBCheck.IsEnabled = true;
-                updatePreview();          
+                updatePreview();
             }
         }
 
@@ -538,7 +571,7 @@ namespace RawParser
                 cameraWBCheck.IsEnabled = true;
                 updatePreview();
             }
-        }      
+        }
 
         private void cameraWBCheck_Click(object sender, RoutedEventArgs e)
         {
@@ -547,5 +580,13 @@ namespace RawParser
             updatePreview();
         }
         #endregion
+
+        private void Slider_PointerCaptureLost(object sender, Windows.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            if (raw?.previewData != null)
+            {
+                updatePreview();
+            }
+        }
     }
 }

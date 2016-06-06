@@ -1,5 +1,4 @@
-﻿using RawParser.Image;
-using System;
+﻿using System;
 
 namespace RawParser.Effect
 {
@@ -96,48 +95,37 @@ namespace RawParser.Effect
          * Does not clip,beware
          * 
          */
-        public static void scaleColor(ref RawImage currentRawImage, int dark, int saturation, double[] mul)
+        public static void scaleColor(ref ushort[] data, uint height, uint width, int dark, int saturation, double[] mul, int colorDepth)
         {
-            for (int i = 0; i < currentRawImage.height * currentRawImage.width; i++)
-            {
-                ushort r = (ushort)(currentRawImage.rawData[i * 3] * mul[0]);
-                ushort g = (ushort)(currentRawImage.rawData[(i * 3) + 1] * mul[1]);
-                ushort b = (ushort)(currentRawImage.rawData[(i * 3) + 2] * mul[2]);
-
-                currentRawImage.rawData[i * 3] = (ushort)r;
-                currentRawImage.rawData[(i * 3) + 1] = (ushort)g;
-                currentRawImage.rawData[(i * 3) + 2] = (ushort)b;
-            }
-        }
-
-        public static void scaleGamma(ref RawImage currentRawImage, double gamma)
-        {
-            int maxValue = (int)Math.Pow(2, currentRawImage.colorDepth) - 1;
-            for (int i = 0; i < currentRawImage.height * currentRawImage.width; i++)
-            {
-                gamma = 1 / gamma;
-                currentRawImage.rawData[i * 3] = (ushort)(maxValue * Math.Pow(currentRawImage.rawData[i * 3] / maxValue, gamma));
-                currentRawImage.rawData[(i * 3) + 1] = (ushort)(maxValue * Math.Pow(currentRawImage.rawData[(i * 3) + 1] / maxValue, gamma));
-                currentRawImage.rawData[(i * 3) + 2] = (ushort)(maxValue * Math.Pow(currentRawImage.rawData[(i * 3) + 2] / maxValue, gamma));
-            }
-        }
-
-        internal static void WhiteBalance(ref uint[] image, int colorDepth, uint h, uint w, int temp)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void scaleColor(ref uint[] copyofpreview, uint height, uint width, int dark, int saturation, double[] mul)
-        {
+            uint maxValue = (uint)(1 << colorDepth) - 1;
             for (int i = 0; i < height * width; i++)
             {
-                ushort r = (ushort)(copyofpreview[i * 3] * mul[0]);
-                ushort g = (ushort)(copyofpreview[(i * 3) + 1] * mul[1]);
-                ushort b = (ushort)(copyofpreview[(i * 3) + 2] * mul[2]);
+                double r = (data[i * 3] * mul[0]);
+                double g = (data[(i * 3) + 1] * mul[1]);
+                double b = (data[(i * 3) + 2] * mul[2]);
+                if (r > maxValue) r = maxValue;
+                if (g > maxValue) g = maxValue;
+                if (b > maxValue) b = maxValue;
+                data[i * 3] = (ushort)r;
+                data[(i * 3) + 1] = (ushort)g;
+                data[(i * 3) + 2] = (ushort)b;
+            }
+        }
 
-                copyofpreview[i * 3] = (ushort)r;
-                copyofpreview[(i * 3) + 1] = (ushort)g;
-                copyofpreview[(i * 3) + 2] = (ushort)b;
+        public static void scaleGamma(ref ushort [] image, uint height,uint width, int colorDepth, double gamma)
+        {
+            double maxValue = (int)Math.Pow(2, colorDepth) - 1;
+            for (int i = 0; i < height * width; i++)
+            {
+                double r = maxValue * Math.Pow(image[i * 3] / maxValue, gamma);
+                double g = maxValue * Math.Pow(image[(i * 3) + 1] / maxValue, gamma);
+                double b = maxValue * Math.Pow(image[(i * 3) + 2] / maxValue, gamma);
+                if (r > maxValue) r = maxValue;
+                if (g > maxValue) g = maxValue;
+                if (b > maxValue) b = maxValue;
+                image[i * 3] = (ushort)r;
+                image[(i * 3) + 1] = (ushort)g;
+                image[(i * 3) + 2] = (ushort)b;
             }
         }
     }

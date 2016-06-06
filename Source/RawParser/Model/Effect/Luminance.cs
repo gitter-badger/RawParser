@@ -5,12 +5,32 @@ namespace RawParser.Effect
     class Luminance
     {
         private Luminance() { }
-        public static void Exposure(ref ushort[] image, uint h, uint w, double value)
+        public static void Exposure(ref ushort[] image, uint h, uint w, double value, int colorDepth)
         {
             double v = Math.Pow(2, value);
+            uint maxValue = (uint)(1 << colorDepth) - 1;
             for (int i = 0; i < h * w * 3; ++i)
             {
-                image[i] = (ushort)(image[i] * v);
+                double t = (image[i] * v);
+                if (t > maxValue) t = maxValue;
+                image[i] = (ushort)t;
+            }
+        }
+
+        public static void Contraste(ref ushort[] image, uint h, uint w, double value, int colorDepth)
+        {
+            double v = Math.Pow(2, value);
+            uint maxValue = (uint)(1 << colorDepth) - 1;
+            
+            for (int i = 0; i < h * w * 3; ++i)
+            {
+                double t = image[i] * 1.0 / maxValue ;
+                t -= 0.5;
+                t *= value * 1.0;
+                t += 0.5;
+                t *= maxValue;
+                if (t > maxValue) t = maxValue;
+                image[i] = (ushort)t;
             }
         }
 
@@ -19,15 +39,6 @@ namespace RawParser.Effect
             for (int i = 0; i < w * h * 3; ++i)
             {
                 if (image[i] > maxValue) image[i] = maxValue;
-            }
-        }
-
-        internal static void Exposure(ref uint[] image, uint h, uint w, double value)
-        {
-            double v = Math.Pow(2, value);
-            for (int i = 0; i < h * w * 3; ++i)
-            {
-                image[i] = (uint)(image[i] * v);
             }
         }
     }

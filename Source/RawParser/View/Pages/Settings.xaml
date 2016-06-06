@@ -56,6 +56,7 @@
                         Scaling factor of the preview images:
                 </TextBlock>
                 <ComboBox Grid.Column="2" SelectionChanged="ComboBox_SelectionChanged">
+                    <ComboBoxItem>Auto</ComboBoxItem>
                     <ComboBoxItem>1</ComboBoxItem>
                     <ComboBoxItem>2</ComboBoxItem>
                     <ComboBoxItem>4</ComboBoxItem>
@@ -69,14 +70,7 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock  TextWrapping="Wrap" FontSize="18" HorizontalAlignment="Left">
-                        Output Format:
-                </TextBlock>
-                <ComboBox Grid.Column="2" SelectionChanged="ComboBoxFile_SelectionChanged">
-                    <ComboBoxItem>.jpg</ComboBoxItem>
-                    <ComboBoxItem>.ppm</ComboBoxItem>
-                </ComboBox>
+                </Grid.ColumnDefinitions>               
             </Grid>
 
             <TextBlock TextWrapping="Wrap" FontSize="30">
