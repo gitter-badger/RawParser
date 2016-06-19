@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using RawParser.Format.IFD;
-using RawParser.Reader;
-using RawParser.Image;
 
 namespace RawParser.Parser
 {
