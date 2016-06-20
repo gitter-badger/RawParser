@@ -3,6 +3,18 @@
   "version": 2,
   "targets": {
     "UAP,Version=v10.0": {
+      "MathNet.Numerics/3.11.1": {
+        "type": "package",
+        "frameworkAssemblies": [
+          "System.Numerics"
+        ],
+        "compile": {
+          "lib/portable-net45+netcore45+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+netcore45+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll": {}
+        }
+      },
       "Microsoft.ApplicationInsights/1.2.3": {
         "type": "package",
         "compile": {
@@ -1914,6 +1926,18 @@
       }
     },
     "UAP,Version=v10.0/win10-arm": {
+      "MathNet.Numerics/3.11.1": {
+        "type": "package",
+        "frameworkAssemblies": [
+          "System.Numerics"
+        ],
+        "compile": {
+          "lib/portable-net45+netcore45+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+netcore45+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll": {}
+        }
+      },
       "Microsoft.ApplicationInsights/1.2.3": {
         "type": "package",
         "compile": {
@@ -3691,6 +3715,18 @@
       }
     },
     "UAP,Version=v10.0/win10-arm-aot": {
+      "MathNet.Numerics/3.11.1": {
+        "type": "package",
+        "frameworkAssemblies": [
+          "System.Numerics"
+        ],
+        "compile": {
+          "lib/portable-net45+netcore45+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+netcore45+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll": {}
+        }
+      },
       "Microsoft.ApplicationInsights/1.2.3": {
         "type": "package",
         "compile": {
@@ -5425,6 +5461,18 @@
       }
     },
     "UAP,Version=v10.0/win10-x64": {
+      "MathNet.Numerics/3.11.1": {
+        "type": "package",
+        "frameworkAssemblies": [
+          "System.Numerics"
+        ],
+        "compile": {
+          "lib/portable-net45+netcore45+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+netcore45+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll": {}
+        }
+      },
       "Microsoft.ApplicationInsights/1.2.3": {
         "type": "package",
         "compile": {
@@ -7211,6 +7259,18 @@
       }
     },
     "UAP,Version=v10.0/win10-x64-aot": {
+      "MathNet.Numerics/3.11.1": {
+        "type": "package",
+        "frameworkAssemblies": [
+          "System.Numerics"
+        ],
+        "compile": {
+          "lib/portable-net45+netcore45+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+netcore45+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll": {}
+        }
+      },
       "Microsoft.ApplicationInsights/1.2.3": {
         "type": "package",
         "compile": {
@@ -8945,6 +9005,18 @@
       }
     },
     "UAP,Version=v10.0/win10-x86": {
+      "MathNet.Numerics/3.11.1": {
+        "type": "package",
+        "frameworkAssemblies": [
+          "System.Numerics"
+        ],
+        "compile": {
+          "lib/portable-net45+netcore45+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+netcore45+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll": {}
+        }
+      },
       "Microsoft.ApplicationInsights/1.2.3": {
         "type": "package",
         "compile": {
@@ -10731,6 +10803,18 @@
       }
     },
     "UAP,Version=v10.0/win10-x86-aot": {
+      "MathNet.Numerics/3.11.1": {
+        "type": "package",
+        "frameworkAssemblies": [
+          "System.Numerics"
+        ],
+        "compile": {
+          "lib/portable-net45+netcore45+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+netcore45+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll": {}
+        }
+      },
       "Microsoft.ApplicationInsights/1.2.3": {
         "type": "package",
         "compile": {
@@ -12466,6 +12550,30 @@
     }
   },
   "libraries": {
+    "MathNet.Numerics/3.11.1": {
+      "sha512": "TLNNs7FL8MOQEXUi/yNGJNKMkz9wcsCmlPUpj1bwJO05blNY2uWy/3XmRp5qz0sOwzqQVWr3f993nvc6+HALjQ==",
+      "type": "package",
+      "files": [
+        "MathNet.Numerics.3.11.1.nupkg.sha512",
+        "MathNet.Numerics.nuspec",
+        "lib/net35/MathNet.Numerics.dll",
+        "lib/net35/MathNet.Numerics.xml",
+        "lib/net40/MathNet.Numerics.dll",
+        "lib/net40/MathNet.Numerics.xml",
+        "lib/portable-net4+sl5+netcore45+wpa81+wp8+MonoAndroid1+MonoTouch1/MathNet.Numerics.XML",
+        "lib/portable-net4+sl5+netcore45+wpa81+wp8+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll",
+        "lib/portable-net45+netcore45+MonoAndroid1+MonoTouch1/MathNet.Numerics.XML",
+        "lib/portable-net45+netcore45+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll",
+        "lib/portable-net45+netcore45+wp8+MonoAndroid1+MonoTouch1/MathNet.Numerics.XML",
+        "lib/portable-net45+netcore45+wp8+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll",
+        "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid1+MonoTouch1/MathNet.Numerics.XML",
+        "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll",
+        "lib/portable-net45+sl5+netcore45+MonoAndroid1+MonoTouch1/MathNet.Numerics.XML",
+        "lib/portable-net45+sl5+netcore45+MonoAndroid1+MonoTouch1/MathNet.Numerics.dll",
+        "license.txt",
+        "readme.txt"
+      ]
+    },
     "Microsoft.ApplicationInsights/1.2.3": {
       "sha512": "a34atobxpucCTTX9VCD7aIu6Ydzry+Va7TxK2tTQcfaMvefGW4kUKtg9GHKIn19IaXe+A4oZt/GBqsOt5vQrBA==",
       "type": "package",
@@ -15781,6 +15889,7 @@
   },
   "projectFileDependencyGroups": {
     "": [
+      "MathNet.Numerics >= 3.11.1",
       "Microsoft.ApplicationInsights.PersistenceChannel >= 1.2.3",
       "Microsoft.ApplicationInsights.WindowsApps >= 1.1.1",
       "Microsoft.NETCore.UniversalWindowsPlatform >= 5.1.0"
